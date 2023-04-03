@@ -25,15 +25,8 @@ Concatenate FILE(s) to standard output.
 With no FILE, or when FILE is -, read standard input.
 
 ```
--A, --show-all
-      TODO: equivalent to -vET
-      FOR NOW: equivalent to -ET
-
 -b, --number-nonblank
       number nonempty output lines, overrides -n
-
-TODO
--e     equivalent to -vE
 
 -E, --show-ends
       display $ at end of each line
@@ -44,17 +37,8 @@ TODO
 -s, --squeeze-blank
       suppress repeated empty output lines
 
-TODO
--t     equivalent to -vT
-
 -T, --show-tabs
-      display TAB characters as ^I
-
--u     (ignored)
-
-TODO: *learn what are non-printing characters
--v, --show-nonprinting
-      use ^ and M- notation, except for LFD and TAB
+              display TAB characters as ^I
 
 --help display this help and exit
 

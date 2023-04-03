@@ -26,8 +26,25 @@ fn main() {
     // eprintln!("{:?}", options);
 
     let mut stdout = stdout().lock();
-    for f in files {
-        if let Err(e) = stdout.write(&f[..]) {
+    for f in &files {
+        let mut output: Vec<u8> = vec![];
+
+        for byte in f {
+            match byte {
+                b'\t' => {
+                    if options.show_tabs {
+                        output.push(b'^');
+                        output.push(b'I');
+                    } else {
+                        output.push(b'\t');
+                    }
+                }
+                b'\n' => output.push(b'\n'),
+                _ => output.push(*byte),
+            }
+        }
+
+        if let Err(e) = stdout.write(&output[..]) {
             eprintln!("Err: writing file, err: [{e}]");
         }
     }
