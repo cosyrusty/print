@@ -17,7 +17,14 @@ fn main() {
         }
 
         if arg.starts_with("-") && options.parse(&arg) {
-            //
+            if options.help {
+                print_help().unwrap();
+                return;
+            }
+            if options.version {
+                print_version().unwrap();
+                return;
+            }
         } else {
             match read_file(arg) {
                 Ok(f) => files.push(f),
@@ -32,6 +39,18 @@ fn main() {
     for f in &files {
         print_file(&f, &options, &mut ln).unwrap()
     }
+}
+
+fn print_help() -> io::Result<()> {
+    let mut stdout = stdout().lock();
+    stdout.write_all("print [FILE]...\n".as_bytes())?;
+    Ok(())
+}
+
+fn print_version() -> io::Result<()> {
+    let mut stdout = stdout().lock();
+    stdout.write_all("v: 0.1\n".as_bytes())?;
+    Ok(())
 }
 
 fn print_file(file: &Vec<Line>, options: &Options, ln: &mut usize) -> io::Result<()> {
@@ -88,6 +107,8 @@ fn print_file(file: &Vec<Line>, options: &Options, ln: &mut usize) -> io::Result
 
 #[derive(Debug)]
 pub struct Options {
+    help: bool,
+    version: bool,
     number_nonblank: bool, // -b, number-nonblank , overrides number
     show_ends: bool,       // -E --show-ends
     number: bool,          // -n, --number
@@ -98,6 +119,8 @@ pub struct Options {
 impl Options {
     pub fn new() -> Self {
         Self {
+            help: false,
+            version: false,
             number_nonblank: false,
             show_ends: false,
             number: false,
@@ -109,6 +132,8 @@ impl Options {
     // true if successfully parsed else false
     pub fn parse(&mut self, arg: &str) -> bool {
         match arg {
+            "--help" => self.help = true,
+            "--version" => self.version = true,
             "-b" | "--number-nonblank" => self.number_nonblank = true,
             "-e" | "--show-ends" => self.show_ends = true,
             "-n" | "--number" => self.number = true,
