@@ -1,6 +1,6 @@
 use std::env::args;
-use std::fs;
 use std::io::{stdin, stdout, Read, Write};
+use std::{fs, io};
 
 fn main() {
     let mut files = vec![];
@@ -9,14 +9,17 @@ fn main() {
 
     for arg in args.iter().skip(1) {
         if &arg[..] == "-" {
-            files.push(read_stdin());
+            match read_stdin() {
+                Ok(f) => files.push(f),
+                Err(e) => eprintln!("Err: reading stdin, err: [{e}]"),
+            }
             continue;
         }
 
         if arg.starts_with("-") && options.parse(&arg) {
             //
         } else {
-            match fs::read(&arg) {
+            match read_file(arg) {
                 Ok(f) => files.push(f),
                 Err(e) => eprintln!("Err: reading file at [{arg}] err: [{e}]"),
             }
@@ -25,34 +28,23 @@ fn main() {
 
     // eprintln!("{:?}", options);
 
-    let mut stdout = stdout().lock();
+    let mut ln = 1; // current line number
     for f in &files {
-        let mut output: Vec<u8> = vec![];
-
-        for byte in f {
-            match byte {
-                b'\t' => {
-                    if options.show_tabs {
-                        output.push(b'^');
-                        output.push(b'I');
-                    } else {
-                        output.push(b'\t');
-                    }
-                }
-                b'\n' => output.push(b'\n'),
-                _ => output.push(*byte),
-            }
-        }
-
-        if let Err(e) = stdout.write(&output[..]) {
-            eprintln!("Err: writing file, err: [{e}]");
-        }
+        print_file(&f, &options, &mut ln).unwrap()
     }
+}
+
+fn print_file(file: &Vec<Line>, _options: &Options, _ln: &mut usize) -> io::Result<()> {
+    let mut stdout = stdout().lock();
+    for line in file {
+        stdout.write_all(line.as_bytes())?
+    }
+
+    Ok(())
 }
 
 #[derive(Debug)]
 pub struct Options {
-    show_all: bool,        // -A --show-all
     number_nonblank: bool, // -b, number-nonblank , overrides number
     show_ends: bool,       // -E --show-ends
     number: bool,          // -n, --number
@@ -63,7 +55,6 @@ pub struct Options {
 impl Options {
     pub fn new() -> Self {
         Self {
-            show_all: false,
             number_nonblank: false,
             show_ends: false,
             number: false,
@@ -75,7 +66,6 @@ impl Options {
     // true if successfully parsed else false
     pub fn parse(&mut self, arg: &str) -> bool {
         match arg {
-            "-A" | "--show-all" => self.show_all = true,
             "-b" | "--number-nonblank" => self.number_nonblank = true,
             "-E" | "--show-ends" => self.show_ends = true,
             "-n" | "--number" => self.number = true,
@@ -89,12 +79,23 @@ impl Options {
     }
 }
 
-fn read_stdin() -> Vec<u8> {
-    let mut buf = Vec::new();
+type Line = String;
+
+fn read_stdin() -> io::Result<Vec<Line>> {
+    let mut buf = String::new();
     let mut stdin = stdin().lock();
 
-    // TODO: handle err
-    stdin.read_to_end(&mut buf).unwrap();
+    stdin.read_to_string(&mut buf)?;
 
-    buf
+    Ok(buf
+        .split_inclusive("\n")
+        .map(|str| str.to_string())
+        .collect())
+}
+
+fn read_file(path: &str) -> io::Result<Vec<Line>> {
+    Ok(fs::read_to_string(path)?
+        .split_inclusive("\n")
+        .map(|str| str.to_string())
+        .collect())
 }
