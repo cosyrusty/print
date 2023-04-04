@@ -28,7 +28,7 @@ With no FILE, or when FILE is -, read standard input.
 -b, --number-nonblank
       number nonempty output lines, overrides -n
 
--E, --show-ends
+-e, --show-ends
       display $ at end of each line
 
 -n, --number
@@ -37,7 +37,7 @@ With no FILE, or when FILE is -, read standard input.
 -s, --squeeze-blank
       suppress repeated empty output lines
 
--T, --show-tabs
+-t, --show-tabs
               display TAB characters as ^I
 
 --help display this help and exit

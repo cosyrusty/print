@@ -28,16 +28,59 @@ fn main() {
 
     // eprintln!("{:?}", options);
 
-    let mut ln = 1; // current line number
+    let mut ln = 0; // current line number
     for f in &files {
         print_file(&f, &options, &mut ln).unwrap()
     }
 }
 
-fn print_file(file: &Vec<Line>, _options: &Options, _ln: &mut usize) -> io::Result<()> {
+fn print_file(file: &Vec<Line>, options: &Options, ln: &mut usize) -> io::Result<()> {
     let mut stdout = stdout().lock();
-    for line in file {
-        stdout.write_all(line.as_bytes())?
+    let mut empty_line = false;
+
+    'a: for line in file {
+        let mut nline = Line::new();
+
+        if line.starts_with('\n') {
+            // previous line was already an empty line then
+            // handle -s arg
+            if empty_line && options.squeeze_blank {
+                continue 'a;
+            }
+            empty_line = true;
+        } else {
+            empty_line = false;
+        }
+
+        // if line is not squeezed than increment the line number
+        *ln += 1;
+
+        if options.number_nonblank {
+            // handle -b arg
+            if empty_line {
+                // this line does not count hence decrement line number
+                *ln -= 1;
+                let eight_spaces = "        ";
+                nline.push_str(&eight_spaces)
+            } else {
+                nline.push_str(&format!("{:>6}  ", *ln))
+            }
+        } else if options.number {
+            // handle -n arg
+            nline.push_str(&format!("{:>6}  ", *ln))
+        }
+
+        for char in line.chars() {
+            if char == '\n' && options.show_ends {
+                nline.push_str("$\n")
+            } else if char == '\t' && options.show_tabs {
+                nline.push_str("^I")
+            } else {
+                nline.push(char)
+            }
+        }
+
+        stdout.write_all(nline.as_bytes())?
     }
 
     Ok(())
@@ -67,10 +110,10 @@ impl Options {
     pub fn parse(&mut self, arg: &str) -> bool {
         match arg {
             "-b" | "--number-nonblank" => self.number_nonblank = true,
-            "-E" | "--show-ends" => self.show_ends = true,
+            "-e" | "--show-ends" => self.show_ends = true,
             "-n" | "--number" => self.number = true,
             "-s" | "--squeeze-blank" => self.squeeze_blank = true,
-            "-T" | "--show-tabs" => self.show_tabs = true,
+            "-t" | "--show-tabs" => self.show_tabs = true,
             _ => {
                 false;
             }
